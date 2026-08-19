@@ -2,53 +2,310 @@
 #include <string>
 #include <cmath>
 using namespace std;
-int findParityBits(int m) {
-int r = 0;
-while (pow(2, r) < m + r + 1) {
-r++;
-}
-return r;
-}
+
 int main() {
-string binaryInput;
-cout << "Enter a 4-bit Binary input: ";
-cin >> binaryInput;
-// 1. Validate if characters are '0' or '1' AND string length is 4
-bool isBinary =true;
-if (isBinary) {
-for (char c : binaryInput) {
-if (c != '0' && c != '1') {
-isBinary = false;
-break;
-}
-}
-}
-if (isBinary) {
-cout << "\nBinary Number = " << binaryInput << endl;
-cout << "No error detected!" << endl;
-int decimalOutput = stoi(binaryInput, nullptr, 2);
-int BinarySize = binaryInput.length();
-cout << "Decimal: " << decimalOutput << endl;
-cout << "Number of parity bits: " << findParityBits(BinarySize) << endl;
-cout << "Data bits: " << BinarySize << endl << endl;
-// Convert characters '0' or '1' to integer values 0 or 1
-int d1 = binaryInput[0] - '0';
-int d2 = binaryInput[1] - '0';
-int d3 = binaryInput[2] - '0';
-int d4 = binaryInput[3] - '0';
-// Correct Hamming(7,4) parity bit formulas
-int p1 = d1 ^ d2 ^ d4; // Checks positions 3, 5, 7
-int p2 = d1 ^ d3 ^ d4; // Checks positions 3, 6, 7
-int p4 = d2 ^ d3 ^ d4; // Checks positions 5, 6, 7
-cout << "P1: " << p1 << endl;
-cout << "P2: " << p2 << endl;
-cout << "P4: " << p4 << endl;
-// Displays the complete 7-bit codeword: [P1, P2, D1, P4, D2, D3, D4]
-cout << "\nFinal Encoded Hamming Code (7 bits): ";
-cout << p1 << p2 << d1 << p4 << d2 << d3 << d4 << endl;
-}
-else {
-cout << "The input number is not a valid 4-bit Binary number." << endl;
-}
-return 0;
+
+    string binary;
+    int r = 0;
+
+    cout << "Enter binary data: ";
+    cin >> binary;
+
+    // =========================
+    // VALIDATE INPUT
+    // =========================
+
+    for (char bit : binary) {
+
+        if (bit != '0' && bit != '1') {
+            cout << "Invalid binary data";
+            return 0;
+        }
+    }
+
+    int m = binary.length();
+
+    // =========================
+    // FIND PARITY BITS
+    // =========================
+
+    while (pow(2, r) < (m + r + 1)) {
+        r++;
+    }
+
+    int totalBits = m + r;
+
+    char hamming[100];
+
+    // =========================
+    // INSERT DATA BITS
+    // =========================
+
+    int dataIndex = 0;
+
+    for (int pos = 1; pos <= totalBits; pos++) {
+
+        // Power of 2 = parity position
+        if ((pos & (pos - 1)) == 0) {
+
+            hamming[pos] = '0';
+
+        }
+        else {
+
+            hamming[pos] = binary[dataIndex];
+            dataIndex++;
+        }
+    }
+
+
+    // =========================
+    // CALCULATE PARITY BITS
+    // =========================
+
+    for (int i = 0; i < r; i++) {
+
+        int parityPos = pow(2, i);
+        int count = 0;
+
+        cout << "\nP" << parityPos << " checks positions: ";
+
+        for (int pos = 1; pos <= totalBits; pos++) {
+
+            if (pos & parityPos) {
+                cout << pos << " ";
+
+                if (hamming[pos] == '1') {
+                    count++;
+                }
+            }
+        }
+
+        cout << "\nValues considered: ";
+
+        for (int pos = 1; pos <= totalBits; pos++) {
+
+            if (pos & parityPos) {
+                cout << hamming[pos] << " ";
+            }
+        }
+
+        // Even parity
+        if (count % 2 == 0)
+            hamming[parityPos] = '0';
+        else
+            hamming[parityPos] = '1';
+
+        cout << "\nP" << parityPos
+             << " = " << hamming[parityPos] << endl;
+    }
+
+
+    // =========================
+    // DISPLAY HAMMING CODE
+    // =========================
+
+   
+
+    cout << "\n\nNumber of data bits: "
+         << m;
+
+    cout << "\nNumber of parity bits: "
+         << r;
+
+    cout << "\nTotal bits: "
+         << totalBits;
+
+
+    cout << "\n\nHamming Code Arrangement:\n";
+
+    cout << "Position: ";
+
+    for (int pos = 1; pos <= totalBits; pos++) {
+        cout << pos << " ";
+    }
+
+    cout << "\nBit:      ";
+
+    for (int pos = 1; pos <= totalBits; pos++) {
+        cout << hamming[pos] << " ";
+    }
+
+    cout << "\n\nHamming Code: ";
+
+    for (int pos = 1; pos <= totalBits; pos++) {
+        cout << hamming[pos];
+    }
+
+
+    // =========================
+    // INTRODUCE ERROR
+    // =========================
+
+    char choice;
+
+    cout << "\n\nDo you want to send data with error? (y/n): ";
+    cin >> choice;
+
+    if (choice == 'y' || choice == 'Y') {
+
+        int errorPosition;
+
+        cout << "Enter position of bit to flip (1 to "
+             << totalBits << "): ";
+
+        cin >> errorPosition;
+
+        if (errorPosition < 1 ||
+            errorPosition > totalBits) {
+
+            cout << "Invalid position!";
+            return 0;
+        }
+
+        // Flip bit
+        if (hamming[errorPosition] == '0')
+            hamming[errorPosition] = '1';
+        else
+            hamming[errorPosition] = '0';
+
+        cout << "\nError introduced at position "
+             << errorPosition << endl;
+
+    }
+    else {
+
+        cout << "\nData sent without error." << endl;
+    }
+
+
+    // =========================
+    // RECEIVER SIDE
+    // =========================
+
+    
+
+    cout << "\nReceived Code: ";
+
+    for (int pos = 1; pos <= totalBits; pos++) {
+        cout << hamming[pos];
+    }
+
+    cout << endl;
+
+
+    // =========================
+    // CHECK PARITY
+    // =========================
+
+    int errorPosition = 0;
+
+    cout << "\nParity Checking:" << endl;
+
+    for (int i = 0; i < r; i++) {
+
+        int parityPos = pow(2, i);
+        int count = 0;
+
+        cout << "\nP" << parityPos
+             << " checks: ";
+
+        for (int pos = 1; pos <= totalBits; pos++) {
+
+            if (pos & parityPos) {
+
+                cout << pos << " ";
+
+                if (hamming[pos] == '1') {
+                    count++;
+                }
+            }
+        }
+
+        cout << "\nValues: ";
+
+        for (int pos = 1; pos <= totalBits; pos++) {
+
+            if (pos & parityPos) {
+                cout << hamming[pos] << " ";
+            }
+        }
+
+        int check;
+
+        if (count % 2 == 0)
+            check = 0;
+        else
+            check = 1;
+
+        cout << "\nCheck = " << check;
+
+        // Build error position
+        if (check == 1) {
+            errorPosition += parityPos;
+        }
+
+        cout << endl;
+    }
+
+
+    // =========================
+    // ERROR DETECTION
+    // =========================
+
+    if (errorPosition == 0) {
+
+        cout << "\nNo error detected!";
+
+    }
+    else {
+
+        cout << "\nError detected at position: "
+             << errorPosition;
+
+        cout << "\nIncorrect bit: "
+             << hamming[errorPosition];
+
+        // Correct bit
+        if (hamming[errorPosition] == '0')
+            hamming[errorPosition] = '1';
+        else
+            hamming[errorPosition] = '0';
+
+        cout << "\nError corrected!";
+    }
+
+
+    // =========================
+    // CORRECTED CODE
+    // =========================
+
+    cout << "\n\nCorrected Hamming Code: ";
+
+    for (int pos = 1; pos <= totalBits; pos++) {
+        cout << hamming[pos];
+    }
+
+
+    // =========================
+    // RECOVER DATA
+    // =========================
+
+    string recoveredData = "";
+
+    for (int pos = 1; pos <= totalBits; pos++) {
+
+        // Non-power-of-2 positions are data bits
+        if ((pos & (pos - 1)) != 0) {
+
+            recoveredData += hamming[pos];
+        }
+    }
+
+    cout << "\nRecovered Data: "
+         << recoveredData;
+
+    cout << "\n\nTransmission completed successfully.";
+
+    return 0;
 }
