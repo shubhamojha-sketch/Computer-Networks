@@ -1,0 +1,81 @@
+Server side - 
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+using namespace std;
+
+int main() {
+    int serverSocket, clientSocket;
+    char buffer[1024] = {0};
+
+    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+
+    sockaddr_in address{};
+    address.sin_family = AF_INET;
+    address.sin_port = htons(8080);
+    address.sin_addr.s_addr = INADDR_ANY;
+
+    bind(serverSocket, (struct sockaddr*)&address, sizeof(address));
+    listen(serverSocket, 3);
+
+    cout << "Server waiting for client..." << endl;
+
+    socklen_t addrlen = sizeof(address);
+    clientSocket = accept(serverSocket,
+                          (struct sockaddr*)&address, &addrlen);
+
+    int bytes = read(clientSocket, buffer, sizeof(buffer) - 1);
+
+    if (bytes > 0) {
+        buffer[bytes] = '\0';
+        cout << "Client says: " << buffer << endl;
+
+        const char* reply = "Hello from server!";
+        send(clientSocket, reply, strlen(reply), 0);
+    }
+
+    close(clientSocket);
+    close(serverSocket);
+
+    return 0;
+}
+ Client side -
+
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+using namespace std;
+
+int main() {
+    int clientSocket;
+    char buffer[1024] = {0};
+
+    clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+
+    sockaddr_in serverAddress{};
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(8080);
+    inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr);
+
+    connect(clientSocket, (struct sockaddr*)&serverAddress,
+            sizeof(serverAddress));
+
+    const char* message = "Hello from client!";
+    send(clientSocket, message, strlen(message), 0);
+
+    int bytes = read(clientSocket, buffer, sizeof(buffer) - 1);
+
+    if (bytes > 0) {
+        buffer[bytes] = '\0';
+        cout << "Server says: " << buffer << endl;
+    }
+
+    close(clientSocket);
+
+    return 0;
+}
+
