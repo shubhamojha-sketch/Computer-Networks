@@ -1,0 +1,82 @@
+Server side-
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+using namespace std;
+
+int main() {
+    int serverSocket;
+    char buffer[1024] = {0};
+
+    serverSocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    sockaddr_in serverAddress{};
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(8080);
+    serverAddress.sin_addr.s_addr = INADDR_ANY;
+
+    bind(serverSocket, (struct sockaddr*)&serverAddress,
+         sizeof(serverAddress));
+
+    cout << "UDP Server waiting for message..." << endl;
+
+    sockaddr_in clientAddress{};
+    socklen_t len = sizeof(clientAddress);
+
+    int bytes = recvfrom(serverSocket, buffer, sizeof(buffer) - 1, 0,
+                         (struct sockaddr*)&clientAddress, &len);
+
+    if (bytes >= 0) {
+        buffer[bytes] = '\0';
+        cout << "Client says: " << buffer << endl;
+
+        const char* reply = "Hello from UDP Server!";
+        sendto(serverSocket, reply, strlen(reply), 0,
+               (struct sockaddr*)&clientAddress, len);
+    }
+
+    close(serverSocket);
+    return 0;
+}
+client side-
+
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+using namespace std;
+
+int main() {
+    int clientSocket;
+    char buffer[1024] = {0};
+
+    clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    sockaddr_in serverAddress{};
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(8080);
+    inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr);
+
+    const char* message = "Hello from UDP Client!";
+
+    sendto(clientSocket, message, strlen(message), 0,
+           (struct sockaddr*)&serverAddress, sizeof(serverAddress));
+
+    sockaddr_in replyAddress{};
+    socklen_t len = sizeof(replyAddress);
+
+    int bytes = recvfrom(clientSocket, buffer, sizeof(buffer) - 1, 0,
+                         (struct sockaddr*)&replyAddress, &len);
+
+    if (bytes >= 0) {
+        buffer[bytes] = '\0';
+        cout << "Server says: " << buffer << endl;
+    }
+
+    close(clientSocket);
+    return 0;
+}
+
